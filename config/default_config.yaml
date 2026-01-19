@@ -1,0 +1,21 @@
+data_path: "data/processed/soybean_rust_dataset.csv"
+target_col: "severity_index"
+
+# Parâmetros para o seu modelo de Deep Learning (AutoFE)
+autofe_params:
+  hidden_layers: [128, 64]
+  learning_rate: 0.001
+  batch_size: 32
+  dropout: 0.2
+  input_shape: "auto" # Pode ser definido dinamicamente
+
+# Parâmetros para Random Forest
+rf_params:
+  n_estimators: 100
+  max_depth: 10
+  random_state: 42
+
+# Parâmetros para XGBoost
+xgb_params:
+  n_estimators: 200
+  learning_rate: 0.05

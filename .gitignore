@@ -1,0 +1,22 @@
+# Ignorar arquivos Python compilados e ambientes
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Ignorar DADOS (Crucial para seu projeto)
+# Mantém a estrutura de pastas, mas ignora o conteúdo pesado
+data/raw/*
+data/processed/*
+data/outputs/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/outputs/.gitkeep
+
+# Ignorar configs da IDE
+.vscode/
+.idea/
+
+# Ignorar logs e arquivos temporários
+*.log
+.DS_Store
