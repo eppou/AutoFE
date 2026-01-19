@@ -10,7 +10,7 @@ DATA_INICIO = "2005-01-01"
 DATA_FIM = "2022-12-31"
 
 # Bounding Box Paraná
-LAT_SLICE = slice(-22.0, -28.0) 
+LAT_SLICE = slice(-28.0, -22.0) 
 LON_SLICE = slice(-55.0, -48.0)
 
 VARIAVEIS = {
