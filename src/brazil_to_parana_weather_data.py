@@ -3,10 +3,13 @@ import os
 import glob
 import numpy as np
 
+# pega os dados originias disponiveis em https://sites.google.com/site/alexandrecandidoxavierufes/brazilian-daily-weather-gridded-data
+# e recorta somente os dados do parana ao inves de usar do brasil todo, economizando armazenamento
+
 # ================= CONFIGURAÇÃO =================
-DIR_ENTRADA = "./data/raw/"  # Sugestão: ./data/raw/brasil/
-DIR_SAIDA = "./data/raw/parana" # Sugestão: ./data/processed/netcdf/
-DATA_INICIO = "2005-01-01"
+DIR_ENTRADA = "../data/raw/"  # Sugestão: ./data/raw/brasil/
+DIR_SAIDA = "../data/raw/clima_parana" # Sugestão: ./data/processed/netcdf/
+DATA_INICIO = "2004-01-01"
 DATA_FIM = "2022-12-31"
 
 # Bounding Box Paraná
@@ -32,6 +35,7 @@ def processar_arquivos():
 
     for prefixo, nome_final in VARIAVEIS.items():
         padrao_busca = os.path.join(DIR_ENTRADA, f"{prefixo}_*.nc")
+        print(padrao_busca)
         arquivos_encontrados = glob.glob(padrao_busca)
         
         if not arquivos_encontrados:
