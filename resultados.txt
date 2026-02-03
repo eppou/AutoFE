@@ -1,0 +1,14 @@
+===== MÉTRICAS LSTM =====
+MAE (dias): 13.29
+RMSE (dias): 17.72
+Erro Mediano (dias): 9.59
+
+===== MÉTRICAS LSTM (AUTO-FE) =====
+MAE (dias): 12.21
+RMSE (dias): 16.06
+Erro Mediano (dias): 8.72
+
+===== MÉTRICAS TSFRESH + RF =====
+MAE:  11.31 dias
+RMSE: 14.71 dias
+MSE:  216.29

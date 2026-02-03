@@ -8,10 +8,10 @@ __pycache__/
 # Mantém a estrutura de pastas, mas ignora o conteúdo pesado
 data/raw/*
 data/processed/*
-data/outputs/*
+data/output/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
-!data/outputs/.gitkeep
+!data/output/.gitkeep
 
 # Ignorar configs da IDE
 .vscode/

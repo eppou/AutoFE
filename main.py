@@ -1,76 +1,86 @@
-# main.py
-import argparse
-import yaml
-import logging
-from src.data_loader import load_agronomic_data
-from src.engine import AutoFEModel
-from src.competitors import RandomForestBaseline, XGBoostBaseline
-from src.utils import save_results, setup_logger
+import numpy as np
+import pandas as pd
+from src.engine import TemporalAggregationEncoder
 
-# Configuração do Logger
-logger = setup_logger()
+# ===============================
+# 1. Carregar dataset
+# ===============================
+df = pd.read_parquet("./data/processed/dataset_timeseries_full.parquet")
 
-def get_model(model_name, config):
-    """Factory Pattern para instanciar o modelo correto"""
-    if model_name == 'autofe':
-        logger.info("Inicializando Auto Learned Features Model (LSTM)...")
-        return AutoFEModel(config['autofe_params'])
-    
-    elif model_name == 'rf':
-        logger.info("Inicializando Random Forest Baseline...")
-        return RandomForestBaseline(config['rf_params'])
-    
-    elif model_name == 'xgboost':
-        logger.info("Inicializando XGBoost Baseline...")
-        return XGBoostBaseline(config['xgb_params'])
-    
-    else:
-        raise ValueError(f"Modelo '{model_name}' não reconhecido.")
+if 'dias_relativos' not in df.columns:
+    raise ValueError("A coluna 'dias_relativos' não foi encontrada no DataFrame.")
+# garantir ordenação temporal correta
+df = df.sort_values(["id", "dias_relativos"])
 
-def main(args):
-    # 1. Carregar Configurações
-    with open(args.config, 'r') as f:
-        config = yaml.safe_load(f)
-    
-    logger.info(f"Iniciando pipeline para: {args.model.upper()}")
+# ===============================
+# 2. Definir colunas
+# ===============================
+feature_cols = [
+    "Rs", "ETo", "Tmax", "Tmin", "RH", "u2", "pr"
+]
 
-    # 2. Carregar Dados (Inputs)
-    # Aqui você carrega seus dados de soja/agronômicos
-    X_train, X_test, y_train, y_test = load_agronomic_data(
-        path=config['data_path'], 
-        target=config['target_col']
-    )
+target_col = "y"
+series_id_col = "id"
 
-    # 3. Instanciar Modelo
-    model = get_model(args.model, config)
+WINDOW_SIZE = 181  # tamanho total da série
 
-    # 4. Pipeline de Treinamento
-    logger.info("Iniciando treinamento...")
-    model.train(X_train, y_train)
+# ===============================
+# 3. Instanciar o encoder
+# ===============================
+encoder = TemporalAggregationEncoder(
+    window_size=WINDOW_SIZE,
+    aggregation_windows=[3, 7, 14,21, 30],
+    aggregation_functions={
+        "mean": np.mean,
+        "std": np.std,
+        "max": np.max,
+        "min": np.min,
+        "sum": np.sum,
+    },
+    stride=1,
+)
 
-    # 5. Pipeline de Avaliação
-    logger.info("Iniciando avaliação...")
-    metrics = model.evaluate(X_test, y_test)
-    
-    # 6. Salvar Outputs (Resultados e o Modelo em si)
-    save_results(metrics, args.model, output_dir='data/outputs')
-    if args.save_model:
-        model.save(f"models/{args.model}_latest.pkl")
-    
-    logger.info(f"Processo finalizado. Acurácia/Loss: {metrics}")
+# ===============================
+# 4. Construir X e y
+# ===============================
+X_list = []
+y_list = []
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Pipeline de Execução - AutoFE Project")
-    
-    parser.add_argument('--model', type=str, required=True, 
-                        choices=['autofe', 'rf', 'xgboost'],
-                        help='Escolha o modelo para rodar: autofe (seu projeto), rf, ou xgboost')
-    
-    parser.add_argument('--config', type=str, default='config/default_config.yaml',
-                        help='Caminho para o arquivo de configuração YAML')
-    
-    parser.add_argument('--save_model', action='store_true',
-                        help='Flag para salvar o binário do modelo treinado')
+for series_id, group in df.groupby(series_id_col):
 
-    args = parser.parse_args()
-    main(args)
+    # checagem básica
+    if len(group) != WINDOW_SIZE:
+        continue  # ou raise erro, se quiser rígido
+
+    # matriz temporal [T, num_features]
+    series_data = group[feature_cols].values
+
+    # target da série (constante dentro do grupo)
+    y_value = group[target_col].iloc[0]
+
+    # aplicar encoder
+    X_encoded = encoder.transform(series_data)
+    # shape: [T', F]
+
+    X_list.append(X_encoded)
+    y_list.append(y_value)
+
+# ===============================
+# 5. Converter para arrays
+# ===============================
+X = np.array(X_list)
+y = np.array(y_list)
+
+print("X shape:", X.shape)
+print("y shape:", y.shape)
+
+# ===============================
+# 6. Salvar em arquivo
+# ===============================
+np.savez(
+    "./data/output/dataset_timeseries_encoded.npz",
+    X=X,
+    y=y
+)
+
+print("Arquivo salvo: dataset_timeseries_encoded.npz")
